@@ -6,4 +6,4 @@ docker run -it --rm --name restic --hostname restic-test \
     -p 8002:8001 \
     -v $(pwd)/testrepo:/repo \
     -v $(pwd)/testdata:/data \
-    isi006/${IMAGE_NAME}:latest
+    ${REGISTRY_NAME}/${IMAGE_NAME}:latest

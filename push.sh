@@ -3,7 +3,7 @@
 . ./VERSION
 
 docker push \
-    isi006/${IMAGE_NAME}:latest
+    ${REGISTRY_NAME}/${IMAGE_NAME}:latest
 
 docker push \
-    isi006/${IMAGE_NAME}:${VERSION}
+    ${REGISTRY_NAME}/${IMAGE_NAME}:${VERSION}

@@ -1,4 +1,12 @@
-# Simple restic image for kubernetes
+# restic-sidecar
+
+Simple restic image for kubernetes, published as `ghcr.io/jigfox/restic-sidecar`
+(`linux/amd64`, `linux/arm64`). Fork of
+[klauserber/restic-kubernetes](https://github.com/klauserber/restic-kubernetes)
+(Docker Hub `isi006/restic-kubernetes`) without the bundled exporter and InfluxDB CLI.
+
+Every push to `main` publishes `:latest` and `:sha-<commit>`; a `vX.Y.Z` tag
+also publishes `:X.Y.Z` and `:X.Y`.
 
 - Meant to be added as sidecar container in kubernetes deployment, statefulset, or daemonset
 - Used for backing up kubernetes PVC/PV data to some form of external storage
@@ -101,7 +109,7 @@ containers:
       - name: data
         mountPath: /data
   - name: restic
-    image: isi006/restic-kubernetes:latest
+    image: ghcr.io/jigfox/restic-sidecar:latest
     env:
       - name: RESTIC_REPOSITORY
         value: s3:my-bucket/backups
@@ -124,7 +132,7 @@ volumes:
 ```yaml
 initContainers:
   - name: restore
-    image: isi006/restic-kubernetes:latest
+    image: ghcr.io/jigfox/restic-sidecar:latest
     env:
       - name: RESTIC_RESTORE
         value: "1"
@@ -149,7 +157,7 @@ Set `RESTIC_INSTANT_BACKUP=1` — the container runs one backup and exits with t
 ## Building
 
 ```bash
-./build.sh          # local build (isi006/restic-kubernetes:latest + :$VERSION)
+./build.sh          # local build (ghcr.io/jigfox/restic-sidecar:latest + :$VERSION)
 ./build_multi.sh    # multi-arch amd64/arm64 via buildx (see comments in script)
 ./push.sh           # push to registry
 ```
@@ -202,7 +210,7 @@ spec:
                     cp /root/ssh/* /root/.ssh/
                     chmod 600 /root/.ssh/*
                     /entry.sh
-                image: isi006/restic-kubernetes:latest
+                image: ghcr.io/jigfox/restic-sidecar:latest
                 securityContext:
                   runAsUser: 0
                   runAsGroup: 0
@@ -228,7 +236,7 @@ spec:
 
             containers:
               - name: restic-backup-sidecar
-                image: isi006/restic-kubernetes:latest
+                image: ghcr.io/jigfox/restic-sidecar:latest
                 command:
                   - /bin/sh
                   - -c

@@ -7,4 +7,4 @@ docker run -it --rm --hostname restic-test \
     -v $(pwd)/testrepo:/repo \
     -v $(pwd)/testdata:/data \
     -v $(pwd)/testscripts:/restic-scripts \
-    isi006/${IMAGE_NAME}:latest
+    ${REGISTRY_NAME}/${IMAGE_NAME}:latest
