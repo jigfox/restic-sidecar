@@ -11,8 +11,6 @@
 
 Based on `restic/restic` (alpine, multi-arch: amd64/arm64) — restic comes from the base image:
 
-- restic-exporter (Prometheus metrics, see `RESTIC_EXPORTER_VERSION` in Dockerfile)
-- InfluxDB v2 CLI (built from the official `influx-cli` module, see `INFLUX_CLI_VERSION` in Dockerfile)
 - kubectl, mysql-client, supercronic, tini
 
 ## Behavior
@@ -24,7 +22,7 @@ On startup the container:
 3. Then, depending on configuration:
     - `RESTIC_RESTORE=1`: restores `RESTIC_RESTORE_SNAPSHOT` (default `latest`) into `/`, unless the marker file `${RESTIC_DATA_DIR}/restic-restored.txt` already exists (restore already happened). If the repository is missing, or has no snapshot for `RESTIC_HOST`, the marker is written instead and the container exits (fresh start, nothing to restore). A failed restore exits non-zero without writing the marker, so the initContainer is retried instead of the app starting on partial data
     - `RESTIC_INSTANT_BACKUP=1`: runs a single backup and exits
-    - default: starts supercronic with `BACKUP_CRON`/`CHECK_CRON` (job output goes to the container log) and starts the metrics exporter (unless `RESTIC_EXPORTER_ENABLED=0`)
+    - default: starts supercronic with `BACKUP_CRON`/`CHECK_CRON` (job output goes to the container log)
 
 Additional behavior:
 
@@ -60,13 +58,9 @@ The image runs as root by default but works as any user (e.g. `securityContext.r
 | `RESTIC_SCRIPTS_DIR` | `/restic-scripts` | Directory containing hook script subdirectories |
 | `RESTIC_CACHE_DIR` | `/tmp/restic-cache` | restic cache directory (writable for any user) |
 | `CRONTAB_FILE` | `/tmp/crontab` | Where the generated crontab is written |
-| `RESTIC_EXPORTER_ENABLED` | `1` | `0`: don't start the metrics exporter (e.g. when one central exporter watches a shared repository) |
-| `REFRESH_INTERVAL` | `600` | Metrics exporter refresh interval in seconds |
 | `NICE_ADJUST` | `10` | Nice priority adjustment for backup/check runs |
 | `IONICE_CLASS` | `2` | ionice scheduling class (best-effort) |
 | `IONICE_PRIO` | `7` | ionice priority (lowest) |
-| `LISTEN_PORT` | `8001` | Metrics exporter port |
-| `LISTEN_ADDRESS` | `0.0.0.0` | Metrics exporter bind address |
 
 Note: ionice/nice are applied to `restic backup`, `restic forget` and `restic check`.
 
@@ -91,14 +85,9 @@ kubectl exec -it <pod> -- ./restore.sh 062d760a --target / --include 'config/*'
 
 ## Prometheus metrics
 
-The exporter listens on port `8001` (expose it as a container port and scrape it):
-
-- Global: `restic_snapshots_total`, `restic_size_total`, `restic_uncompressed_size_total`, `restic_blob_count_total`, `restic_compression_ratio`, `restic_check_success`, `restic_locks_total`, ...
-- Per snapshot (labels `client_hostname`, `client_username`, `client_version`, ...): `restic_backup_*` (files/dirs/sizes/duration/timestamp)
-
-A ready-made Grafana dashboard ships with upstream: https://github.com/ngosang/restic-exporter/blob/main/grafana/grafana_dashboard.json
-
-Alerts for Failed or Outdated Backups: https://github.com/ngosang/restic-exporter#prometheus--alertmanager-rules
+Unlike upstream, this image ships no exporter. Run one
+[restic-exporter](https://github.com/ngosang/restic-exporter) per repository
+instead of one per sidecar; it also brings a Grafana dashboard and alert rules.
 
 ## Usage
 
@@ -121,8 +110,6 @@ containers:
           secretKeyRef:
             name: restic
             key: password
-    ports:
-      - containerPort: 8001
     volumeMounts:
       - name: data
         mountPath: /data
