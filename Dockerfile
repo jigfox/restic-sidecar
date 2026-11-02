@@ -36,7 +36,7 @@ WORKDIR /
 # supercronic instead of busybox crond: it runs as any user (crond needs root)
 RUN apk add --no-cache curl mysql-client mariadb-connector-c tini supercronic
 
-# ##versions: https://github.com/kubernetes/kubernetes/releases
+# renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
 ARG KUBECTL_VERSION=1.37.1
 RUN set -e; \
     cd /tmp; \

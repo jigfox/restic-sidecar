@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "customManagers:dockerfileVersions"
+  ],
+  "timezone": "Europe/Berlin",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "platformAutomerge": false,
+  "packageRules": [
+    {
+      "description": "automerge minor, patch and digest once every status check is green; majors are always reviewed",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "automerged updates wait 3 days, so a broken or compromised upstream release is not merged minutes after publication; digests are left out because most carry no release timestamp, and timestamp-optional keeps updates without one from being held forever",
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    }
+  ]
+}
