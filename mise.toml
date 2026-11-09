@@ -1,0 +1,21 @@
+[tools]
+"aqua:evilmartians/lefthook" = "2.2.2"
+conform = "0.1.0-alpha.31"
+"aqua:orhun/git-cliff" = "2.14.2"
+"aqua:rhysd/actionlint" = "1.7.12"
+"aqua:zizmorcore/zizmor" = "1.32.0"
+"aqua:koalaman/shellcheck" = "0.11.0"
+"aqua:hadolint/hadolint" = "2.15.1"
+
+[hooks]
+# git hooks (lefthook.yml) are installed with the tools
+postinstall = "lefthook install"
+
+[tasks."commits:check"]
+description = "Fail if a commit in origin/<base>..HEAD breaks .conform.yaml (base defaults to main)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+conform enforce --revision-range "origin/${1:-main}..HEAD"
+echo "all commits conform"
+'''
