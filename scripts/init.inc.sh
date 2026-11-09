@@ -5,7 +5,7 @@
 # is meaningful (RESTIC_FORGET_ARGS="" disables forget).
 : "${RESTIC_REPOSITORY:=/repo}"
 : "${BACKUP_SOURCE:=/data}"
-: "${BACKUP_CRON:=00 */24 * * *}"
+: "${BACKUP_CRON:=0 0 * * *}"
 : "${CHECK_CRON:=00 04 * * 1}"
 : "${RESTIC_FORGET_ARGS=--keep-last 7}"
 : "${RESTIC_BACKUP_OPTIONS=}"
