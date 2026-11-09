@@ -13,8 +13,6 @@ fi
 
 echo "Starting... image version ${IMAGE_VERSION}"
 
-export RESTIC_HOST=${RESTIC_HOST:-localhost}
-
 echo "unlock at startup"
 restic unlock
 

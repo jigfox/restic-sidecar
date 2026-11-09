@@ -1,4 +1,5 @@
 #!/bin/sh
-export RESTIC_HOST=${RESTIC_HOST:-localhost}
+
+. ./init.inc.sh
 
 restic snapshots --host ${RESTIC_HOST}

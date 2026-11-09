@@ -1,6 +1,43 @@
 # shellcheck shell=sh
 
-export RESTIC_HOST=${RESTIC_HOST:-localhost}
+# Defaults. Unset or empty variables get one (":="; the restic base image
+# itself sets IONICE_CLASS to ""), except the argument lists below, where ""
+# is meaningful (RESTIC_FORGET_ARGS="" disables forget).
+: "${RESTIC_REPOSITORY:=/repo}"
+: "${BACKUP_SOURCE:=/data}"
+: "${BACKUP_CRON:=00 */24 * * *}"
+: "${CHECK_CRON:=00 04 * * 1}"
+: "${RESTIC_FORGET_ARGS=--keep-last 7}"
+: "${RESTIC_BACKUP_OPTIONS=}"
+: "${RESTIC_RESTORE_OPTIONS=}"
+: "${RESTIC_RESTORE:=0}"
+: "${RESTIC_RESTORE_SNAPSHOT:=latest}"
+: "${RESTIC_INSTANT_BACKUP:=0}"
+: "${RESTIC_BACKUP_ON_EXIT:=1}"
+: "${RESTIC_DATA_DIR:=/data}"
+: "${RESTIC_MARKER_FILE_SUBDIR:=/}"
+: "${RESTIC_SCRIPTS_DIR:=/restic-scripts}"
+# writable for any user, so the image also runs as non-root
+: "${RESTIC_CACHE_DIR:=/tmp/restic-cache}"
+: "${CRONTAB_FILE:=/tmp/crontab}"
+: "${NICE_ADJUST:=10}"
+: "${IONICE_CLASS:=2}"
+: "${IONICE_PRIO:=7}"
+: "${IMAGE_VERSION:=unknown}"
+RESTIC_HOST=${RESTIC_HOST:-localhost}
+# restic reads some of these itself, hook scripts may use the others
+export RESTIC_REPOSITORY BACKUP_SOURCE BACKUP_CRON CHECK_CRON RESTIC_FORGET_ARGS \
+  RESTIC_BACKUP_OPTIONS RESTIC_RESTORE_OPTIONS RESTIC_RESTORE RESTIC_RESTORE_SNAPSHOT \
+  RESTIC_INSTANT_BACKUP RESTIC_BACKUP_ON_EXIT RESTIC_DATA_DIR RESTIC_MARKER_FILE_SUBDIR \
+  RESTIC_SCRIPTS_DIR RESTIC_CACHE_DIR CRONTAB_FILE NICE_ADJUST IONICE_CLASS IONICE_PRIO \
+  IMAGE_VERSION RESTIC_HOST
+
+# There is no default password: a forgotten one must not silently create or
+# open a repository protected by a well-known password.
+if [ -z "${RESTIC_PASSWORD:-}${RESTIC_PASSWORD_FILE:-}${RESTIC_PASSWORD_COMMAND:-}" ]; then
+  echo "ERROR: no repository password; set RESTIC_PASSWORD, RESTIC_PASSWORD_FILE or RESTIC_PASSWORD_COMMAND" >&2
+  exit 1
+fi
 
 RESTORED_MARKER_FILE=${RESTIC_DATA_DIR}${RESTIC_MARKER_FILE_SUBDIR}restic-restored.txt
 RESTORE_IN_PROGRESS_MARKER_FILENAME=restic-restore-inprogress.txt
