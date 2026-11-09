@@ -1,6 +1,4 @@
 failure-threshold: warning
 ignored:
-  # RESTIC_PASSWORD is a documented default for local tests, not a secret
-  - DL3064
   # the base image's apk repository is the pin; package versions rotate out
   - DL3018

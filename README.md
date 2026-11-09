@@ -54,7 +54,7 @@ The image runs as root by default but works as any user (e.g. `securityContext.r
 |---|---|---|
 | `BACKUP_SOURCE` | `/data` | Folder to be backed up |
 | `RESTIC_REPOSITORY` | `/repo` | Restic repository (backup storage location, any restic-supported backend) |
-| `RESTIC_PASSWORD` | - | Password for the restic repository (also `RESTIC_PASSWORD_FILE`/`RESTIC_PASSWORD_COMMAND` supported) |
+| `RESTIC_PASSWORD` | - | **Required** (or `RESTIC_PASSWORD_FILE`/`RESTIC_PASSWORD_COMMAND`): password for the restic repository. Without one every script exits with an error; there is no default |
 | `BACKUP_CRON` | `00 */24 * * *` | Cron expression for backup timing |
 | `CHECK_CRON` | `00 04 * * 1` | Cron expression for `restic check` |
 | `RESTIC_FORGET_ARGS` | `--keep-last 7` | Arguments for `restic forget`; set to `""` to never run forget |
@@ -73,6 +73,10 @@ The image runs as root by default but works as any user (e.g. `securityContext.r
 | `NICE_ADJUST` | `10` | Nice priority adjustment for backup/check runs |
 | `IONICE_CLASS` | `2` | ionice scheduling class (best-effort) |
 | `IONICE_PRIO` | `7` | ionice priority (lowest) |
+
+The defaults are set in `scripts/init.inc.sh`, not in the image. An empty
+variable gets its default too, except `RESTIC_FORGET_ARGS`,
+`RESTIC_BACKUP_OPTIONS` and `RESTIC_RESTORE_OPTIONS`, where `""` is kept.
 
 Note: ionice/nice are applied to `restic backup`, `restic forget` and `restic check`.
 
