@@ -38,12 +38,9 @@ RUN apk add --no-cache curl mysql-client mariadb-connector-c tini supercronic
 
 # renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
 ARG KUBECTL_VERSION=1.37.1
-RUN set -e; \
-    cd /tmp; \
-    curl -sLO "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl"; \
-    mv kubectl /usr/local/bin/; \
-    chmod +x /usr/local/bin/kubectl
+RUN curl -sL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" \
+    && chmod +x /usr/local/bin/kubectl
 
-ADD scripts/* /
+COPY scripts/* /
 
 ENTRYPOINT ["/sbin/tini", "--", "/entry.sh"]
