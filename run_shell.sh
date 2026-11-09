@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-. ./VERSION
+# local image, see `mise run docker:build`
+IMG=${IMG:-ghcr.io/jigfox/restic-sidecar:latest}
 
 docker run -it --rm --name restic --hostname restic-test \
     --entrypoint /bin/sh \
-    -v $(pwd)/testrepo:/repo \
-    -v $(pwd)/testdata:/data \
-    -v $(pwd)/testscripts:/restic-scripts \
-    ${REGISTRY_NAME}/${IMAGE_NAME}:latest
+    -v "$PWD"/testrepo:/repo \
+    -v "$PWD"/testdata:/data \
+    -v "$PWD"/testscripts:/restic-scripts \
+    "$IMG"
