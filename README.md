@@ -165,7 +165,7 @@ Set `RESTIC_INSTANT_BACKUP=1` — the container runs one backup and exits with t
 ## Building
 
 ```bash
-mise run docker:build    # local build (ghcr.io/jigfox/restic-sidecar:latest)
+mise run docker:build    # local build (restic-sidecar:dev, or IMG)
 mise run docker:buildx   # multi-arch amd64/arm64 via buildx, pushes IMG
 ```
 
@@ -174,13 +174,16 @@ Releases are built by CI, see "Development and releases".
 ## Local testing
 
 ```bash
-./run.sh            # continuous mode, repo+data in ./testrepo + ./testdata
-./run_instant.sh    # instant backup mode, with hook scripts from ./testscripts
-./run_restore.sh    # restore mode, with hook scripts from ./testscripts
-./run_shell.sh      # shell into the image
+mise run dev            # cron mode
+mise run dev instant    # one backup, then exit
+mise run dev restore    # restore mode
+mise run dev shell      # shell in the image
 ```
 
-They run `ghcr.io/jigfox/restic-sidecar:latest`; set `IMG` to use a local build.
+Each builds `restic-sidecar:dev` first and runs it with the repository in
+`test/repo`, the data in `test/data` (both gitignored) and the hook scripts
+from `test/hooks`, with the password `local-test` unless `RESTIC_PASSWORD` is
+set.
 
 ## Kyverno Policies
 
