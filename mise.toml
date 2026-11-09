@@ -20,6 +20,11 @@ docker build --build-arg "IMAGE_VERSION=${IMAGE_VERSION:-dev}" \
   -t "${IMG:-restic-sidecar:dev}" .
 '''
 
+[tasks.test]
+description = "Build the image and run the smoke tests against it (test/smoke.sh, needs Docker)"
+depends = ["docker:build"]
+run = "test/smoke.sh"
+
 [tasks.dev]
 description = "Build and run the image against test/repo and test/data: dev [cron|instant|restore|shell]"
 depends = ["docker:build"]
@@ -57,7 +62,7 @@ docker buildx build --push --platform "${PLATFORMS:-linux/amd64,linux/arm64}" \
 
 [tasks."lint:shell"]
 description = "shellcheck (warnings and above) on the image scripts and the test hooks"
-run = "shellcheck -x -P SCRIPTDIR --severity=warning scripts/*.sh test/hooks/*/*.sh"
+run = "shellcheck -x -P SCRIPTDIR --severity=warning scripts/*.sh test/*.sh test/hooks/*/*.sh"
 
 [tasks."lint:docker"]
 description = "hadolint (.hadolint.yaml)"

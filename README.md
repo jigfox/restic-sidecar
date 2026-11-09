@@ -173,6 +173,13 @@ Releases are built by CI, see "Development and releases".
 
 ## Local testing
 
+`mise run test` builds the image and runs the smoke tests (`test/smoke.sh`)
+against it: password check, backup with hooks, forget, snapshots and check,
+restore and its skip, and cron mode with the backup on SIGTERM. CI runs the
+same on every PR (job `Test`).
+
+To try it by hand:
+
 ```bash
 mise run dev            # cron mode
 mise run dev instant    # one backup, then exit
