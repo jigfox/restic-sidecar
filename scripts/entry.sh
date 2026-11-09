@@ -8,7 +8,7 @@ backup_on_exit() {
 }
 
 if [ "${RESTIC_BACKUP_ON_EXIT}" = "1" ]; then
-  trap backup_on_exit SIGTERM
+  trap backup_on_exit TERM
 fi
 
 echo "Starting... image version ${IMAGE_VERSION}"
@@ -18,7 +18,7 @@ export RESTIC_HOST=${RESTIC_HOST:-localhost}
 echo "unlock at startup"
 restic unlock
 
-echo -n "check for existence/sanity of repo, status: "
+printf "check for existence/sanity of repo, status: "
 restic snapshots > /dev/null 2>&1
 repo_status=$?
 

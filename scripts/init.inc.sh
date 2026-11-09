@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 
 export RESTIC_HOST=${RESTIC_HOST:-localhost}
 
@@ -67,7 +68,7 @@ runScripts() {
       echo "Running scripts from ${DIR}"
 
       # Change to the directory
-      cd "${DIR}"
+      cd "${DIR}" || return 1
 
       # Loop over each script in the directory (the glob stays literal when the
       # directory is empty, so guard with a file test)

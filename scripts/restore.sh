@@ -29,7 +29,7 @@ if ! echo "${SNAPSHOTS}" | grep -q '"id"'; then
 fi
 
 echo "Starting restore at $(date +"%Y-%m-%d %H:%M:%S") (image version ${IMAGE_VERSION}))"
-restic restore --host ${RESTIC_HOST} ${RESTIC_RESTORE_OPTIONS} ${@}
+restic restore --host ${RESTIC_HOST} ${RESTIC_RESTORE_OPTIONS} "$@"
 RESTORE_RESULT=$?
 
 # a failed restore must not be marked as restored, otherwise the app starts on
