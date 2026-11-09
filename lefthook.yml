@@ -1,0 +1,10 @@
+# Installed by `mise install` (postinstall hook) or `lefthook install`.
+# The same checks run in CI ("Conventional commits"); rules in .conform.yaml.
+commit-msg:
+  jobs:
+    - name: conform
+      run: conform enforce --commit-msg-file {1}
+pre-push:
+  jobs:
+    - name: conform
+      run: mise run -q commits:check
