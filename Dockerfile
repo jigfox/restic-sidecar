@@ -1,10 +1,6 @@
 # ##versions: https://hub.docker.com/r/restic/restic
 FROM restic/restic:0.19.1
 
-# set by buildx per platform; a default here would override it and put an
-# amd64 kubectl into the arm64 image
-ARG TARGETARCH
-
 ARG IMAGE_VERSION=latest
 
 ENV IMAGE_VERSION=${IMAGE_VERSION}
@@ -33,13 +29,9 @@ ENV CRONTAB_FILE="/tmp/crontab"
 
 WORKDIR /
 
-# supercronic instead of busybox crond: it runs as any user (crond needs root)
-RUN apk add --no-cache curl mysql-client mariadb-connector-c tini supercronic
-
-# renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
-ARG KUBECTL_VERSION=1.37.1
-RUN curl -sL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" \
-    && chmod +x /usr/local/bin/kubectl
+# supercronic instead of busybox crond: it runs as any user (crond needs root).
+# Nothing else: hook scripts that need more tools bring their own image.
+RUN apk add --no-cache tini supercronic
 
 COPY scripts/* /
 

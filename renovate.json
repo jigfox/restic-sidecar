@@ -23,7 +23,7 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
-      "description": "the base image and what the Dockerfile installs (kubectl) ship in the image, so they release: fix = patch",
+      "description": "the base image and anything the Dockerfile installs ship in the image, so they release: fix = patch",
       "matchManagers": ["dockerfile", "custom.regex"],
       "semanticCommitType": "fix",
       "semanticCommitScope": "deps"
