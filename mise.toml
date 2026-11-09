@@ -17,7 +17,31 @@ run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 docker build --build-arg "IMAGE_VERSION=${IMAGE_VERSION:-dev}" \
-  -t "${IMG:-ghcr.io/jigfox/restic-sidecar:latest}" .
+  -t "${IMG:-restic-sidecar:dev}" .
+'''
+
+[tasks.dev]
+description = "Build and run the image against test/repo and test/data: dev [cron|instant|restore|shell]"
+depends = ["docker:build"]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+mode=${1:-cron}
+args=()
+case "$mode" in
+  cron) ;;
+  instant) args+=(-e RESTIC_INSTANT_BACKUP=1) ;;
+  restore) args+=(-e RESTIC_RESTORE=1) ;;
+  shell) args+=(--entrypoint /bin/sh) ;;
+  *) echo "usage: mise run dev [cron|instant|restore|shell]" >&2; exit 2 ;;
+esac
+mkdir -p test/repo test/data
+docker run -it --rm --hostname restic-test \
+  -e RESTIC_PASSWORD="${RESTIC_PASSWORD:-local-test}" \
+  -v "$PWD/test/repo:/repo" \
+  -v "$PWD/test/data:/data" \
+  -v "$PWD/test/hooks:/restic-scripts" \
+  "${args[@]}" "${IMG:-restic-sidecar:dev}"
 '''
 
 [tasks."docker:buildx"]
@@ -32,8 +56,8 @@ docker buildx build --push --platform "${PLATFORMS:-linux/amd64,linux/arm64}" \
 '''
 
 [tasks."lint:shell"]
-description = "shellcheck (warnings and above) on the image scripts and the local run scripts"
-run = "shellcheck -x -P SCRIPTDIR --severity=warning scripts/*.sh run*.sh"
+description = "shellcheck (warnings and above) on the image scripts and the test hooks"
+run = "shellcheck -x -P SCRIPTDIR --severity=warning scripts/*.sh test/hooks/*/*.sh"
 
 [tasks."lint:docker"]
 description = "hadolint (.hadolint.yaml)"
