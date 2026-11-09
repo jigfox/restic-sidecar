@@ -253,9 +253,6 @@ spec:
                 securityContext:
                   runAsUser: 0
                   runAsGroup: 0
-                ports:
-                  - name: restic-metrics
-                    containerPort: 8001
                 envFrom:
                   - secretRef:
                       name: restic-backup-secret
@@ -348,47 +345,6 @@ spec:
             REFRESH_INTERVAL: "900"
             BACKUP_CRON: "30 * * * *"
             RESTIC_FORGET_ARGS: "--keep-last 12 --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --keep-yearly 100 --prune"
-```
-
-To create a PodMonitor to monitor your Backups in every namespace use a policy like this:
-
-```yaml
----
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
-metadata:
-  name: [% policy_name %]
-spec:
-  rules:
-    - name: [% policy_name %]
-      match:
-        any:
-          - resources:
-              kinds:
-                - Namespace
-      generate:
-        generateExisting: true
-        synchronize: true
-        apiVersion: monitoring.coreos.com/v1
-        kind: PodMonitor
-        name: restic-pod-monitor
-        namespace: "{{ request.object.metadata.name }}"
-
-        data:
-          kind: PodMonitor
-          metadata:
-            name: restic-pod-monitor
-          spec:
-            podMetricsEndpoints:
-              - port: restic-metrics
-                path: /
-            selector:
-              matchLabels:
-                restic-backup.isium.de/enabled: "true"
-          labels:
-            monitoring.coreos.com/name: restic-pod-monitor
-            monitoring.coreos.com/k8s-app: kube-system
-
 ```
 
 ## Development and releases
