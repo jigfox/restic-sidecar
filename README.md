@@ -55,7 +55,7 @@ The image runs as root by default but works as any user (e.g. `securityContext.r
 | `BACKUP_SOURCE` | `/data` | Folder to be backed up |
 | `RESTIC_REPOSITORY` | `/repo` | Restic repository (backup storage location, any restic-supported backend) |
 | `RESTIC_PASSWORD` | - | **Required** (or `RESTIC_PASSWORD_FILE`/`RESTIC_PASSWORD_COMMAND`): password for the restic repository. Without one every script exits with an error; there is no default |
-| `BACKUP_CRON` | `00 */24 * * *` | Cron expression for backup timing |
+| `BACKUP_CRON` | `0 0 * * *` | Cron expression for backup timing |
 | `CHECK_CRON` | `00 04 * * 1` | Cron expression for `restic check` |
 | `RESTIC_FORGET_ARGS` | `--keep-last 7` | Arguments for `restic forget`; set to `""` to never run forget |
 | `RESTIC_BACKUP_OPTIONS` | `""` | Extra arguments for `restic backup` |
