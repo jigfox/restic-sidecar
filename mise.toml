@@ -16,10 +16,7 @@ description = "Build the image locally (IMG, IMAGE_VERSION env)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
-# the classic builder does not set TARGETARCH (kubectl download)
-case "$(uname -m)" in arm64 | aarch64) arch=arm64 ;; *) arch=amd64 ;; esac
 docker build --build-arg "IMAGE_VERSION=${IMAGE_VERSION:-dev}" \
-  --build-arg "TARGETARCH=${TARGETARCH:-$arch}" \
   -t "${IMG:-ghcr.io/jigfox/restic-sidecar:latest}" .
 '''
 

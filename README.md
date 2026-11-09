@@ -19,7 +19,11 @@ releases" below).
 
 Based on `restic/restic` (alpine, multi-arch: amd64/arm64) — restic comes from the base image:
 
-- kubectl, mysql-client, supercronic, tini
+- supercronic, tini
+
+Nothing else: hook scripts in `RESTIC_SCRIPTS_DIR` only have restic, busybox and
+what the base image ships (e.g. jq, ssh). Up to 2.9 the image also carried kubectl,
+curl and the MySQL client.
 
 ## Behavior
 
@@ -416,8 +420,8 @@ is releasable the workflow ends without a release.
 | breaking (`!` / `BREAKING CHANGE:`) | minor while the version is 0.x, major from 1.0 on |
 | `docs`, `test`, `chore`, `ci`, `build`, `refactor`, `style` | none |
 
-Renovate uses `fix(deps)` for the base image and kubectl (they end up in the
-image and release) and `chore(deps)` for GitHub Actions and mise tools.
+Renovate uses `fix(deps)` for the base image and the Alpine packages (they end
+up in the image and release) and `chore(deps)` for GitHub Actions and mise tools.
 
 A PR from this repository (not a fork) with the label `prerelease` gets a
 pre-release `v<next version>-pr.<PR number>.<run number>` on every push to the
