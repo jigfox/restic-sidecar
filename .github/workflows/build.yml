@@ -58,6 +58,9 @@ jobs:
           build-args: |
             IMAGE_VERSION=${{ inputs.version }}
           push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
           tags: |
             ${{ env.IMAGE }}:${{ inputs.version }}
             ${{ !inputs.prerelease && format('{0}:latest', env.IMAGE) || '' }}
