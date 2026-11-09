@@ -15,6 +15,8 @@ tmp=$(mktemp -d "$PWD/tmp.XXXXXX")
 container=restic-smoke-$$
 cleanup() {
   docker rm -f "$container" >/dev/null 2>&1 || true
+  # the container writes as root: on Linux only root may delete it again
+  docker run --rm -v "$tmp:/t" --entrypoint sh "$IMG" -c 'rm -rf /t/*' >/dev/null 2>&1 || true
   rm -rf "$tmp"
 }
 trap cleanup EXIT
@@ -26,12 +28,13 @@ fail() {
   failures=$((failures + 1))
 }
 
-# fresh repo and data dirs, writable for the non-root test
+# fresh repo and data dirs in a new directory (never deleted before the end:
+# on Linux the container's root-owned files can't be removed by the caller)
 fresh() {
-  rm -rf "${tmp:?}"/*
-  mkdir -p "$tmp/repo" "$tmp/data" "$tmp/restore"
-  echo "hello" >"$tmp/data/file.txt"
-  chmod -R a+rwX "$tmp"
+  dir=$(mktemp -d "$tmp/case.XXXXXX")
+  mkdir -p "$dir/repo" "$dir/data" "$dir/restore"
+  echo "hello" >"$dir/data/file.txt"
+  chmod -R a+rwX "$dir"
 }
 
 # sidecar <data dir> [docker args...] [-- command...] -> output; exit code in $rc
@@ -45,15 +48,15 @@ sidecar() {
   done
   [ $# -gt 0 ] && shift
   rc=0
-  out=$(docker run --rm -v "$tmp/repo:/repo" -v "$data:/data" -v "$HOOKS:/restic-scripts:ro" \
+  out=$(docker run --rm -v "$dir/repo:/repo" -v "$data:/data" -v "$HOOKS:/restic-scripts:ro" \
     ${opts[@]+"${opts[@]}"} "$IMG" "$@" 2>&1) || rc=$?
 }
 
-backup() { sidecar "$tmp/data" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_INSTANT_BACKUP=1 -e RESTIC_BACKUP_ON_EXIT=0 "$@"; }
+backup() { sidecar "$dir/data" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_INSTANT_BACKUP=1 -e RESTIC_BACKUP_ON_EXIT=0 "$@"; }
 
 t="no password: exits 1 with an error"
 fresh
-sidecar "$tmp/data"
+sidecar "$dir/data"
 if [ "$rc" = 1 ] && grep -q "ERROR: no repository password" <<<"$out"; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
 
 t="instant backup: initializes the repository, runs the hooks, saves a snapshot"
@@ -70,39 +73,38 @@ backup -e RESTIC_FORGET_ARGS=
 if [ "$rc" = 0 ] && ! grep -q "Applying Policy" <<<"$out"; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
 
 t="snapshots.sh lists both snapshots, check.sh finds no errors"
-sidecar "$tmp/data" -e RESTIC_PASSWORD=$PASSWORD --entrypoint sh -- -c './snapshots.sh && ./check.sh'
+sidecar "$dir/data" -e RESTIC_PASSWORD=$PASSWORD --entrypoint sh -- -c './snapshots.sh && ./check.sh'
 if [ "$rc" = 0 ] && grep -q "^2 snapshots" <<<"$out" && grep -q "no errors were found" <<<"$out"; then
   pass "$t"
 else fail "$t (exit $rc)" "$out"; fi
 
 t="wrong password: exits 1, the repository is not re-initialized"
-sidecar "$tmp/data" -e RESTIC_PASSWORD=wrong -e RESTIC_INSTANT_BACKUP=1 -e RESTIC_BACKUP_ON_EXIT=0
+sidecar "$dir/data" -e RESTIC_PASSWORD=wrong -e RESTIC_INSTANT_BACKUP=1 -e RESTIC_BACKUP_ON_EXIT=0
 if [ "$rc" = 1 ] && grep -q "is not accessible" <<<"$out" && ! grep -q "Initializing" <<<"$out"; then
   pass "$t"
 else fail "$t (exit $rc)" "$out"; fi
 
 t="restore: fills an empty volume and writes the marker"
-sidecar "$tmp/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
-if [ "$rc" = 0 ] && [ "$(cat "$tmp/restore/file.txt" 2>/dev/null)" = hello ] &&
-  [ -f "$tmp/restore/restic-restored.txt" ] && grep -q "Hello pre restore" <<<"$out" &&
+sidecar "$dir/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
+if [ "$rc" = 0 ] && [ "$(cat "$dir/restore/file.txt" 2>/dev/null)" = hello ] &&
+  [ -f "$dir/restore/restic-restored.txt" ] && grep -q "Hello pre restore" <<<"$out" &&
   grep -q "Hello post restore" <<<"$out"; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
 
 t="restore: skipped when the marker is present"
-sidecar "$tmp/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
+sidecar "$dir/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
 if [ "$rc" = 0 ] && grep -q "is present -> skip restore" <<<"$out"; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
 
 t="restore from a missing repository: starts empty and marks the volume"
 fresh
-rm -rf "${tmp:?}/restore"/*
-sidecar "$tmp/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
+sidecar "$dir/restore" -e RESTIC_PASSWORD=$PASSWORD -e RESTIC_RESTORE=1
 if [ "$rc" = 0 ] && grep -q "does not exists, assuming starting from scratch" <<<"$out" &&
-  [ -f "$tmp/restore/restic-restored.txt" ]; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
+  [ -f "$dir/restore/restic-restored.txt" ]; then pass "$t"; else fail "$t (exit $rc)" "$out"; fi
 
 t="cron mode as non-root: crontab accepted, backup on SIGTERM"
 fresh
 # the repository on a tmpfs: bind mounts are not writable for uid 1000 on
 # every Docker host (colima), and it only has to live as long as the container
-docker run -d --name "$container" -u 1000:1000 --tmpfs /repo:mode=1777 -v "$tmp/data:/data:ro" \
+docker run -d --name "$container" -u 1000:1000 --tmpfs /repo:mode=1777 -v "$dir/data:/data:ro" \
   -e RESTIC_PASSWORD=$PASSWORD "$IMG" >/dev/null
 for _ in $(seq 1 30); do
   docker logs "$container" 2>&1 | grep -q "read crontab" && break
