@@ -21,6 +21,18 @@
       "matchUpdateTypes": ["minor", "patch"],
       "minimumReleaseAge": "3 days",
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "the base image and what the Dockerfile installs (kubectl) ship in the image, so they release: fix = patch",
+      "matchManagers": ["dockerfile", "custom.regex"],
+      "semanticCommitType": "fix",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "description": "CI and tooling never release: chore = no release",
+      "matchManagers": ["github-actions", "mise"],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
     }
   ]
 }
