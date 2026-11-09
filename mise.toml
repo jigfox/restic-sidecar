@@ -11,6 +11,62 @@ conform = "0.1.0-alpha.31"
 # git hooks (lefthook.yml) are installed with the tools
 postinstall = "lefthook install"
 
+[tasks."docker:build"]
+description = "Build the image locally (IMG, IMAGE_VERSION env)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+docker build --build-arg "IMAGE_VERSION=${IMAGE_VERSION:-dev}" \
+  -t "${IMG:-ghcr.io/jigfox/restic-sidecar:latest}" .
+'''
+
+[tasks."docker:buildx"]
+description = "Build and push a multi-arch image (IMG, IMAGE_VERSION, PLATFORMS env)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+# once per machine: docker buildx create --use; on a non-matching host also
+# docker run --privileged --rm tonistiigi/binfmt --install all
+docker buildx build --push --platform "${PLATFORMS:-linux/amd64,linux/arm64}" \
+  --build-arg "IMAGE_VERSION=${IMAGE_VERSION:-dev}" -t "${IMG:?set IMG}" .
+'''
+
+[tasks."lint:shell"]
+description = "shellcheck (warnings and above) on the image scripts and the local run scripts"
+run = "shellcheck -x -P SCRIPTDIR --severity=warning scripts/*.sh run*.sh"
+
+[tasks."lint:docker"]
+description = "hadolint (.hadolint.yaml)"
+run = "hadolint Dockerfile"
+
+# Releases: git-cliff reads the Conventional Commits since the last stable v*
+# tag (cliff.toml). The release workflows use the same tasks.
+
+[tasks."release:next"]
+description = "Next release version without the v (empty if nothing is releasable); --or-patch falls back to the next patch"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+latest=$(git tag --list 'v[0-9]*' --sort=-v:refname | grep -Ev -- '-' | head -n1 || true)
+next=$(git-cliff --bumped-version 2>/dev/null || true)
+if [ -z "$next" ] || [ "$next" = "$latest" ]; then
+  next=
+  if [ "${1:-}" = "--or-patch" ]; then
+    v=${latest#v}
+    next="v${v%.*}.$(( ${v##*.} + 1 ))"
+  fi
+fi
+echo "${next#v}"
+'''
+
+[tasks."release:notes"]
+description = "Release notes for the unreleased commits as version <version> (e.g. 0.3.0)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+git-cliff --unreleased --tag "v${1:?usage: release:notes <version>}" --strip header 2>/dev/null
+'''
+
 [tasks."commits:check"]
 description = "Fail if a commit in origin/<base>..HEAD breaks .conform.yaml (base defaults to main)"
 run = '''
@@ -19,3 +75,11 @@ set -euo pipefail
 conform enforce --revision-range "origin/${1:-main}..HEAD"
 echo "all commits conform"
 '''
+
+[tasks."lint:workflows"]
+description = "actionlint and zizmor on .github/workflows"
+run = ["actionlint", "zizmor --no-progress --min-severity medium .github"]
+
+[tasks.lint]
+description = "All linters"
+depends = ["lint:shell", "lint:docker", "lint:workflows"]
